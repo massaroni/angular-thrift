@@ -1,13 +1,14 @@
-(function (window, angular, undefined) {
+(function (window, angular, Thrift,  undefined) {
   'use strict';
 
-  angular.module('ngThrift')
+  angular.module('ngThrift', [])
     .service('ThriftService', ['$http', '$q', function ($http, $q) {
       var thriftService = {};
 
       thriftService.newClient = function (className, url) {
         var thriftClient = {};
 
+        console.log(Thrift);
         var transport = new Thrift.Transport('');
         var protocol = new Thrift.Protocol(transport);
         var client = new window[className](protocol);
@@ -49,4 +50,4 @@
       return thriftService;
     }]);
 
-})(window, window.angular);
+})(window, window.angular, window.Thrift);

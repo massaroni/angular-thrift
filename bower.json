@@ -20,6 +20,7 @@
     "tests"
   ],
   "dependencies": {
-    "angular": ">= 1.0.6"
+    "angular": ">= 1.0.6",
+    "bower-thrift": ">= 0.9.1"
   }
 }
