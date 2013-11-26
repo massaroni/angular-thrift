@@ -8,7 +8,6 @@
       thriftService.newClient = function (className, url) {
         var thriftClient = {};
 
-        console.log(Thrift);
         var transport = new Thrift.Transport('');
         var protocol = new Thrift.Protocol(transport);
         var client = new window[className](protocol);
