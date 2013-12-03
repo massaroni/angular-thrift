@@ -4,7 +4,7 @@
   "version": "0.1.3",
   "homepage": "https://github.com/davearata/angular-thrift",
   "authors": [
-    "dave <dave.arata@dacatech.com>"
+    "dave <dave.arata@dacatech.com>",
     "kevin <kevinmassaroni@gmail.com>"
   ],
   "description": "An angular module that integrates thrift javascript lib with angular's http service",
