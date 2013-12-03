@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('ngThrift', [])
+angular.module('ngThrift', ['auth'])
   .service('ThriftService', ['$http', '$q', '$log', 'AuthenticationService', function ($http, $q, $log, AuthenticationService) {
     var thriftService = {};
 
