@@ -19,7 +19,6 @@ module.exports = function(config) {
       'bower_components/angular-mocks/**/*.js',
       'bower_components/**/*.js',
       'src/main/js/**/*.js',
-      'src/angular-thrift.js',
       'src/test/js/**/*.js'
     ],
 
