@@ -29,7 +29,7 @@ angular.module('ngThrift', [])
         var onReauthSuccess = function () {
           AuthenticationService.updateSecurityCredentials(args);
           var postData = thriftSend.apply(client, args);
-          var post = $http.post(url, postData);
+          var post = $http({method: 'POST', url: url, postData : postData, transformResponse : []});
           post.success(function (data) {
             var response;
 
