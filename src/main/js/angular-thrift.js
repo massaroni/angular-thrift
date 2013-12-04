@@ -53,7 +53,7 @@ angular.module('ngThrift', ['auth'])
 
         var postData = thriftSend.apply(client, args);
         //var post = $http.post(url, postData);
-        var post = $http({method: 'POST', url: url, postData : postData, transformResponse : []});
+        var post = $http.post(url, postData);
 
         if (post == null) {
           throw "Can't get a new http post.";
@@ -63,11 +63,7 @@ angular.module('ngThrift', ['auth'])
           if (data === null || data === undefined) {
             throw "Undefined thrift response json object.";
           }
-
-          if (typeof data !== 'string') {
-            throw "Expected json string, but was '" + typeof data + "' = " + data;
-          }
-
+          
           //transform the raw response data using thrift generated code
           try {
             client.output.transport.setRecvBuffer(data);

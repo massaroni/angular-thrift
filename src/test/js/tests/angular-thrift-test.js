@@ -10,6 +10,8 @@ describe('Service: angular-thrift ThriftService', function () {
 
   var thriftService, $httpBackend;
 
+  angular.module('auth', []);
+
   var serializeThriftRpcResult = function (rpcName, responseObject, thriftMessageType) {
     var transport = new Thrift.Transport('');
     var protocol = new Thrift.Protocol(transport);
@@ -72,6 +74,37 @@ describe('Service: angular-thrift ThriftService', function () {
     thriftService = ThriftService;
     $httpBackend = _$httpBackend_;
   }));
+
+  var serializeThriftRpcResult = function (rpcName, responseObject, thriftMessageType) {
+    var transport = new Thrift.Transport('');
+    var protocol = new Thrift.Protocol(transport);
+    protocol.writeMessageBegin(rpcName, thriftMessageType, 1);
+    responseObject.write(protocol);
+    protocol.writeMessageEnd();
+    return transport.getSendBuffer();
+  };
+
+  var serializeThriftResponse = function (rpcName, responseObject) {
+    return serializeThriftRpcResult(rpcName, responseObject, Thrift.MessageType.REPLY);
+  };
+
+  var serializeThriftRpcException = function (rpcName, responseObject) {
+    return serializeThriftRpcResult(rpcName, responseObject, Thrift.MessageType.REPLY);
+  };
+
+  var stageRpcResult = function (responseMessage) {
+    var response = new ExampleServiceResponse();
+    response.responseMessage = responseMessage;
+
+    var rpcRetval = new ExampleService_exampleServiceCall_result();
+    rpcRetval.success = response;
+
+    var rpcRetvalJson = serializeThriftResponse('exampleServiceCall', rpcRetval);
+    expect(typeof rpcRetvalJson).toBe('string');
+
+    $httpBackend.resetExpectations();
+    $httpBackend.expect('POST', 'thrift/test/url').respond(rpcRetvalJson);
+  };  
 
   it('should be available in the app context', function () {
     expect(!!thriftService).toBe(true);
