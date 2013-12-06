@@ -72,6 +72,7 @@ angular.module('ngThrift', ['auth'])
           try {
             client.output.transport.setRecvBuffer(data);
             var response = thriftRecv.call(client);
+            deferred.resolve(response);
           } catch (ex) {
             if (AuthenticationService.isSecurityException(ex)) {
               $log.info('SecurityException calling ' + className + '.' + thriftMethodName + '()\n' + ex);
@@ -81,7 +82,6 @@ angular.module('ngThrift', ['auth'])
 
             throw ex;
           }
-          deferred.resolve(response);
         }).error(onPostError);
 
         return deferred.promise;
