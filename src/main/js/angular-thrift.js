@@ -55,7 +55,7 @@ angular.module('ngThrift', ['auth'])
         //var post = $http.post(url, postData);
         var post = $http({method: 'POST', url: url, postData : postData, transformResponse : []});
 
-        if (post == null) {
+        if (post === null) {
           throw "Can't get a new http post.";
         }
 
