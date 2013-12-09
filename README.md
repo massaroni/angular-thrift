@@ -1,7 +1,9 @@
 angular-thrift
 ==============
 
-An angular module that integrates thrift javascript lib with angular's http service
+An angular module that integrates thrift javascript lib with angular's http service.
+
+Run tests with this command: karma start karma.conf.js
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this work except in compliance with the License.
