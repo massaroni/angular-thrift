@@ -1,21 +1,39 @@
 'use strict';
 
-angular.module('ngThrift', ['auth'])
-  .service('ThriftService', ['$http', '$q', '$log', 'AuthenticationService', function ($http, $q, $log, AuthenticationService) {
-    var thriftService = {};
+angular.module('ngThrift', ['auth', 'ngThrift.http'])
+  .service('ThriftService', ['$http', '$q', '$log', 'AuthenticationService', 'HttpErrorHandlerService', function ($http, $q, $log, AuthenticationService, HttpErrorHandlerService) {
+    if (!AuthenticationService) {
+      throw 'Undefined AuthenticationService.';
+    }
 
     var httpConfig = {transformResponse: [], transformRequest: [], timeout: 30000};
 
-    thriftService.setTimeoutMs = function (timeout) {
-      httpConfig.timeout = timeout;
+    var thriftService = {};
+
+    var isConnectionError = function (httpStatus) {
+      if (httpStatus === null || httpStatus === undefined) {
+        return false;
+      }
+
+      if (httpStatus === 500) {
+        return true;
+      }
+
+      if (typeof httpStatus === 'number') {
+        return httpStatus >= 500 && httpStatus <= 599;
+      }
+
+      return false;
     };
 
-    thriftService.newClient = function (className, url) {
+    thriftService.newClient = function (className, url, httpErrorHandlerServiceOverride) {
       var thriftClient = {};
 
       var transport = new Thrift.Transport('');
       var protocol = new Thrift.Protocol(transport);
       var client = new window[className](protocol);
+
+      var httpErrorHandler = !httpErrorHandlerServiceOverride ? HttpErrorHandlerService : httpErrorHandlerServiceOverride;
 
       thriftClient.makeThriftRequest = function (thriftMethodName) {
         var thriftSend = client['send_' + thriftMethodName];
@@ -26,69 +44,76 @@ angular.module('ngThrift', ['auth'])
 
         var deferred = $q.defer();
 
-        var onPostError = function (data, status) {
-          var msg = 'Thrift service call failed for Url = ' + url + '. Status = ' + status;
-          deferred.reject(new Error(msg));
-        };
+        var postResultHandlers = {onSuccess: null, onError: null};
 
-        // second try post, when authentication fails the first time.
-        var onReauthSuccess = function () {
-          AuthenticationService.updateSecurityCredentials(args);
+        var run = function () {
           var postData = thriftSend.apply(client, args);
           var post = $http.post(url, postData, httpConfig);
-          post.success(function (data) {
-            var response;
 
-            try {
-              client.output.transport.setRecvBuffer(data);
-              response = thriftRecv.call(client);
-            } catch (ex) {
-              $log.error('Failed on second try: ' + className + '.' + thriftMethodName);
-              $log.error(ex);
-              deferred.reject(ex);
-              return;
+          if (!post) {
+            throw 'Can\'t get a new http post.';
+          }
+
+          post.success(postResultHandlers.onSuccess).error(postResultHandlers.onError);
+        };
+
+        var onPostError = function (data, status) {
+          $log.debug('Thrift rpc error.');
+          $log.debug(status);
+          $log.debug(data);
+
+          var reject = function () {
+            var error = new Error('Thrift service call failed for Url = ' + url + '. Status = ' + status + ' data = ' + data);
+            var rejectionInfo = {data: data, status: status, error: error};
+            deferred.reject(rejectionInfo);
+          };
+
+          if (AuthenticationService.isSecurityException(data)) {
+            $log.info('SecurityException calling ' + className + '.' + thriftMethodName + '()\n' + data);
+            AuthenticationService.reAuthenticate(function () {
+              AuthenticationService.updateSecurityCredentials(args);
+              run();
+            }, function () {
+              AuthenticationService.onCannotAuthenticate();
+              //deferred is never resolved or rejected if reauthentication fails
+            });
+          } else if (isConnectionError(status)) {
+            if (!httpErrorHandler) {
+              reject();
+            } else {
+              // delegate control to the injected error handler
+              httpErrorHandler.onConnectionError(status, function () {
+                run();
+              }, reject);
             }
-
-            deferred.resolve(response);
-          }).error(onPostError);
+          } else {
+            reject();
+          }
         };
 
-        var onReauthFail = function () {
-          AuthenticationService.onCannotAuthenticate();
-        };
-
-        var postData = thriftSend.apply(client, args);
-        //var post = $http.post(url, postData);
-        var post = $http.post(url, postData, httpConfig);
-
-        if (!post) {
-          throw "Can't get a new http post.";
-        }
-
-        post.success(function (data) {
+        var onPostSuccess = function (data) {
           if (data === null || data === undefined) {
-            throw "Undefined thrift response json object.";
+            throw 'Undefined thrift response json object.';
           }
 
           if (typeof data !== 'string') {
-            throw "Expected json string, but was '" + typeof data + "' = " + data;
+            throw 'Expected json string, but was "' + typeof data + '" = ' + data;
           }
 
-          //transform the raw response data using thrift generated code
           try {
+            //transform the raw response data using thrift generated code
             client.output.transport.setRecvBuffer(data);
             var response = thriftRecv.call(client);
             deferred.resolve(response);
           } catch (ex) {
-            if (AuthenticationService.isSecurityException(ex)) {
-              $log.info('SecurityException calling ' + className + '.' + thriftMethodName + '()\n' + ex);
-              AuthenticationService.reAuthenticate(onReauthSuccess, onReauthFail);
-              return;
-            }
-
-            throw ex;
+            onPostError(ex, null);
           }
-        }).error(onPostError);
+        };
+
+        postResultHandlers.onError = onPostError;
+        postResultHandlers.onSuccess = onPostSuccess;
+
+        run();
 
         return deferred.promise;
       };

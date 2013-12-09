@@ -7,6 +7,7 @@ describe('Service: angular-thrift ThriftService', function () {
   var onCannotAuthenticateSpy;
   var isSecurityExceptionSpy;
   var reAuthenticateSpy;
+  var onConnectionErrorSpy;
 
   var thriftService, $httpBackend;
 
@@ -41,7 +42,28 @@ describe('Service: angular-thrift ThriftService', function () {
     $httpBackend.expect('POST', 'thrift/test/url').respond(rpcRetvalJson);
   };
 
+  var mockOutHttpErrorHandlerService = function ($provide) {
+    var mockHttpErrorHandlerService = {
+      onConnectionError: function (status, retryHandler, noRetryHandler) {
+      }
+    };
+
+    onConnectionErrorSpy = spyOn(mockHttpErrorHandlerService, 'onConnectionError');
+
+    var mockHttpErrorHandlerServiceCtor = function () {
+      return mockHttpErrorHandlerService;
+    };
+
+    $provide.service('HttpErrorHandlerService', mockHttpErrorHandlerServiceCtor);
+  };
+
+  // mocking out "interface" module dependencies
+  angular.module('auth', []);
+  angular.module('ngThrift.http', []);
+
   beforeEach(module('ngThrift', function ($provide) {
+    mockOutHttpErrorHandlerService($provide);
+
     var mockAuthenticationService = {
       updateSecurityCredentials: function (argsArray) {
       },
@@ -125,6 +147,48 @@ describe('Service: angular-thrift ThriftService', function () {
     expect(isSecurityExceptionSpy).toHaveBeenCalled();
     expect(updateSecurityCredentialsSpy).toHaveBeenCalled();
     expect(onCannotAuthenticateSpy).not.toHaveBeenCalled();
+  });
+
+  var connectionErrorTest = function(httpStatus) {
+    var callCount = 0;
+    var actualStatus = null;
+
+    onConnectionErrorSpy.andCallFake(function(status, retryCallback, noRetryCallback) {
+      actualStatus = status;
+      callCount++;
+    });
+
+    $httpBackend.resetExpectations();
+    $httpBackend.expect('POST', 'thrift/test/url').respond(httpStatus, '');
+
+    var client = thriftService.newClient('ExampleServiceClient', 'thrift/test/url');
+
+    var actualPromise = client.makeThriftRequest('exampleServiceCall');
+
+    actualPromise.then(function (value) {
+      expect(value instanceof ExampleServiceResponse).toBe(true);
+      expect(value.responseMessage).toBe('reauthenticated result message');
+    }, function (errorReason) {
+      expect("should not").toBe("get here");
+    });
+
+    $httpBackend.flush();
+
+    expect(callCount).toBe(1);
+    expect(actualStatus).toBe(httpStatus);
+    expect(onConnectionErrorSpy).toHaveBeenCalled();
+    expect(reAuthenticateSpy).not.toHaveBeenCalled();
+    expect(isSecurityExceptionSpy).toHaveBeenCalled();
+    expect(updateSecurityCredentialsSpy).not.toHaveBeenCalled();
+    expect(onCannotAuthenticateSpy).not.toHaveBeenCalled();
+  };
+
+  it('should pass control to HttpErrorHanlderService, for a connection error http 500.', function () {
+    connectionErrorTest(500);
+  });
+
+  it('should pass control to HttpErrorHanlderService, for a connection error http 599.', function () {
+    connectionErrorTest(599);
   });
 
 });
