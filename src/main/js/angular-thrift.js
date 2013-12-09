@@ -4,6 +4,12 @@ angular.module('ngThrift', ['auth'])
   .service('ThriftService', ['$http', '$q', '$log', 'AuthenticationService', function ($http, $q, $log, AuthenticationService) {
     var thriftService = {};
 
+    var httpConfig = {transformResponse: [], transformRequest: [], timeout: 30000};
+
+    thriftService.setTimeoutMs = function (timeout) {
+      httpConfig.timeout = timeout;
+    };
+
     thriftService.newClient = function (className, url) {
       var thriftClient = {};
 
@@ -29,7 +35,7 @@ angular.module('ngThrift', ['auth'])
         var onReauthSuccess = function () {
           AuthenticationService.updateSecurityCredentials(args);
           var postData = thriftSend.apply(client, args);
-          var post = $http({method: 'POST', url: url, postData : postData, transformResponse : []});
+          var post = $http.post(url, postData, httpConfig);
           post.success(function (data) {
             var response;
 
@@ -53,9 +59,9 @@ angular.module('ngThrift', ['auth'])
 
         var postData = thriftSend.apply(client, args);
         //var post = $http.post(url, postData);
-        var post = $http({method: 'POST', url: url, postData : postData, transformResponse : []});
+        var post = $http.post(url, postData, httpConfig);
 
-        if (post === null) {
+        if (!post) {
           throw "Can't get a new http post.";
         }
 
