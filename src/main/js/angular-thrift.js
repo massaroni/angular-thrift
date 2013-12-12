@@ -106,7 +106,7 @@ angular.module('ngThrift', ['auth', 'ngThrift.http'])
             var response = thriftRecv.call(client);
             deferred.resolve(response);
           } catch (ex) {
-            onPostError(ex, null);
+            onPostError(ex, {replyData : data});
           }
         };
 
