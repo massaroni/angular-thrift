@@ -48,6 +48,7 @@ angular.module('ngThrift', ['auth', 'ngThrift.http'])
 
         var run = function () {
           var postData = thriftSend.apply(client, args);
+          httpConfig.tracker = thriftMethodName;
           var post = $http.post(url, postData, httpConfig);
 
           if (!post) {
