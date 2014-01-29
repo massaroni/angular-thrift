@@ -191,4 +191,8 @@ describe('Service: angular-thrift ThriftService', function () {
     connectionErrorTest(599);
   });
 
+  it('should pass control to HttpErrorHanlderService, for a connection error http 404.', function () {
+    connectionErrorTest(404);
+  });
+
 });

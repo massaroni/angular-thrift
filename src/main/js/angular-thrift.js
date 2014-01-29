@@ -15,12 +15,8 @@ angular.module('ngThrift', ['auth', 'ngThrift.http'])
         return false;
       }
 
-      if (httpStatus === 500) {
-        return true;
-      }
-
       if (typeof httpStatus === 'number') {
-        return httpStatus >= 500 && httpStatus <= 599;
+        return httpStatus < 200 || httpStatus > 301;
       }
 
       return false;
