@@ -1,7 +1,7 @@
 {
   "name": "angular-thrift",
   "main": "src/main/js/angular-thrift.js",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "homepage": "https://github.com/davearata/angular-thrift",
   "authors": [
     "dave <dave.arata@dacatech.com>",
@@ -22,7 +22,7 @@
   ],
   "dependencies": {
     "angular": ">= 1.0.6",
-    "bower-thrift": ">= 0.9.1-p"
+    "bower-thrift": "0.9.1-p"
   },
   "devDependencies": {
     "json3": "~3.2.4",
