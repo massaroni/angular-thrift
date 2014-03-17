@@ -149,6 +149,49 @@ describe('Service: angular-thrift ThriftService', function () {
     expect(onCannotAuthenticateSpy).not.toHaveBeenCalled();
   });
 
+  it('should reject the promise when reauthentication fails', inject(function (AuthenticationService) {
+    var exception = new SecurityException();
+    exception.message = "test exception message";
+
+    var rpcRetval = new ExampleService_exampleServiceCall_result();
+    rpcRetval.se = exception;
+
+    var rpcRetvalJson = serializeThriftRpcException('exampleServiceCall', rpcRetval);
+    expect(typeof rpcRetvalJson).toBe('string');
+
+    AuthenticationService.reAuthenticate = function (onSuccess, onFail){
+      onFail('reAuthentication failure reason');
+    };
+
+    reAuthenticateSpy = spyOn(AuthenticationService, 'reAuthenticate').andCallThrough();
+
+    $httpBackend.resetExpectations();
+    $httpBackend.expect('POST', 'thrift/test/url').respond(rpcRetvalJson);
+
+    var client = thriftService.newClient('ExampleServiceClient', 'thrift/test/url');
+
+    var actualPromise = client.makeThriftRequest('exampleServiceCall');
+
+    var promiseSuccessCallCount = 0;
+    var promiseRejectCallCount = 0;
+    actualPromise.then(function () {
+      promiseSuccessCallCount++;
+      expect('should not be in success callback').toBe(null);
+    }, function (errorReason) {
+      promiseRejectCallCount++;
+      expect(errorReason.reason).toBe('reAuthentication failure reason');
+    });
+
+    $httpBackend.flush();
+
+    expect(reAuthenticateSpy).toHaveBeenCalled();
+    expect(isSecurityExceptionSpy).toHaveBeenCalled();
+    expect(updateSecurityCredentialsSpy).not.toHaveBeenCalled();
+    expect(onCannotAuthenticateSpy).toHaveBeenCalled();
+    expect(promiseSuccessCallCount).toBe(0);
+    expect(promiseRejectCallCount).toBe(1);
+  }));
+
   var connectionErrorTest = function(httpStatus) {
     var callCount = 0;
     var actualStatus = null;

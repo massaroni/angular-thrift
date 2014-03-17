@@ -59,9 +59,9 @@ angular.module('ngThrift', ['auth', 'ngThrift.http'])
           $log.debug(status);
           $log.debug(data);
 
-          var reject = function () {
+          var reject = function (reason) {
             var error = new Error('Thrift service call failed for Url = ' + url + '. Status = ' + status + ' data = ' + data);
-            var rejectionInfo = {data: data, status: status, error: error};
+            var rejectionInfo = {data: data, status: status, error: error, reason: reason};
             deferred.reject(rejectionInfo);
           };
 
@@ -70,9 +70,9 @@ angular.module('ngThrift', ['auth', 'ngThrift.http'])
             AuthenticationService.reAuthenticate(function () {
               AuthenticationService.updateSecurityCredentials(args);
               run();
-            }, function () {
+            }, function (reason) {
               AuthenticationService.onCannotAuthenticate();
-              //deferred is never resolved or rejected if reauthentication fails
+              reject(reason);
             });
           } else if (isConnectionError(status)) {
             if (!httpErrorHandler) {
