@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('ngThrift', ['auth', 'ngThrift.http'])
-  .service('ThriftService', ['$http', '$q', '$log', 'AuthenticationService', 'HttpErrorHandlerService',
-    function ($http, $q, $log, AuthenticationService, HttpErrorHandlerService) {
+  .service('ThriftService', ['$rootScope', '$http', '$q', '$log', 'AuthenticationService', 'HttpErrorHandlerService',
+    function ($rootScope, $http, $q, $log, AuthenticationService, HttpErrorHandlerService) {
       if (!AuthenticationService) {
         throw 'Undefined AuthenticationService.';
       }
@@ -33,6 +33,8 @@ angular.module('ngThrift', ['auth', 'ngThrift.http'])
         var httpErrorHandler = !httpErrorHandlerServiceOverride ? HttpErrorHandlerService : httpErrorHandlerServiceOverride;
 
         thriftClient.makeThriftRequest = function (thriftMethodName) {
+          $rootScope.$broadcast('thriftRequestStart', url, thriftMethodName);
+
           var thriftSend = client['send_' + thriftMethodName];
           var thriftRecv = client['recv_' + thriftMethodName];
 
@@ -63,6 +65,7 @@ angular.module('ngThrift', ['auth', 'ngThrift.http'])
             var reject = function (reason) {
               var error = new Error('Thrift service call failed for Url = ' + url + '. Status = ' + status + ' data = ' + data);
               var rejectionInfo = {data: data, status: status, error: error, reason: reason};
+              $rootScope.$broadcast('thriftRequestError', url, thriftMethodName);
               deferred.reject(rejectionInfo);
             };
 
@@ -102,6 +105,7 @@ angular.module('ngThrift', ['auth', 'ngThrift.http'])
               //transform the raw response data using thrift generated code
               client.output.transport.setRecvBuffer(data);
               var response = thriftRecv.call(client);
+              $rootScope.$broadcast('thriftRequestSuccess', url, thriftMethodName);
               deferred.resolve(response);
             } catch (ex) {
               onPostError(ex, {replyData: data});
