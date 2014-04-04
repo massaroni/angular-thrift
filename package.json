@@ -1,0 +1,18 @@
+{
+  "name": "angular-thrift",
+  "version": "0.3.7",
+  "repository": "https://github.com/davearata/angular-thrift",
+  "dependencies": {},
+  "devDependencies": {
+    "karma": "~0.12.3",
+    "karma-script-launcher": "~0.1.0",
+    "karma-chrome-launcher": "~0.1.3",
+    "karma-firefox-launcher": "~0.1.3",
+    "karma-phantomjs-launcher": "~0.1.3",
+    "karma-jasmine": "~0.1.3",
+    "karma-requirejs": "~0.2.1"
+  },
+  "engines": {
+    "node": ">=0.8.0"
+  }
+}
