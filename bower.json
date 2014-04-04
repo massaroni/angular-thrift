@@ -1,7 +1,7 @@
 {
   "name": "angular-thrift",
   "main": "src/main/js/angular-thrift.js",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "homepage": "https://github.com/davearata/angular-thrift",
   "authors": [
     "dave <dave.arata@dacatech.com>",
